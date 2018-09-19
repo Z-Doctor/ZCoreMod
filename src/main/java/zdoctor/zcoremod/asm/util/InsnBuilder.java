@@ -371,8 +371,6 @@ public class InsnBuilder extends InsnList {
 	}
 
 	public void printf(String format, InsnBuilder... insn) {
-		System.out.println(String.format(format, 1.0f, 1.0f, 1.0f));
-
 		ldc(format);
 		newObjectArray(insn.length);
 		for (int i = 0; i < insn.length; i++) {
