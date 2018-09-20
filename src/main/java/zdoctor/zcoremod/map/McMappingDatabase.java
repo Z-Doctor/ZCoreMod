@@ -2,9 +2,7 @@ package zdoctor.zcoremod.map;
 
 import java.io.File;
 
-import zdoctor.commons.io.util.ZipUtil;
 import zdoctor.zcoremod.Config;
-import zdoctor.zcoremod.CoreModFMLLoadPlugin;
 import zdoctor.zcoremod.map.pair.McObfPair;
 import zdoctor.zcoremod.map.pair.McPairDictironary;
 
@@ -22,23 +20,19 @@ public class McMappingDatabase {
 	}
 
 	public static void loadDefaultMappings() {
-		McPairDictironary map = new McPairDictironary();
+		MCMAPPINGS = new McPairDictironary();
+//		MCMAPPINGS = new McPairDictironary("Mappings.txt");
 		File mapDir = getMapDir();
-		
+
 		for (File file : mapDir.listFiles()) {
 			if (file.isFile() && file.getName().endsWith(".csv")) {
-				MapParser.parseMapFile(map, file);
+				MapParser.parseMapFile(file);
 			}
 		}
 
-		if (map != null && map.count() > 0)
-			MCMAPPINGS = map;
-		
+		SRGMAPPINGS = new McPairDictironary("Srg-Entries.txt");
 		File notchSrg = getSrgFile();
-
-		McPairDictironary srg = MapParser.parseSrgFile(MCMAPPINGS, notchSrg);
-		if (srg != null && srg.count() > 0)
-			SRGMAPPINGS = srg;
+		MapParser.parseSrgFile(notchSrg);
 
 	}
 
@@ -51,36 +45,16 @@ public class McMappingDatabase {
 	}
 
 	public static File getSrgFile() {
-		
 		File srgFile = new File(Config.SRG);
-//		if (!CoreModFMLLoadPlugin.isDeobfuscationEnabled)
-//			return new File(System.getProperty("net.minecraftforge.gradle.GradleStart.srg.notch-srg"));
-//		else
 		return srgFile;
 	}
 
-	public static void loadMappings(File map, File srg) {
-		McPairDictironary tempMap = null;
-		McPairDictironary tempSRG = null;
+	public static void registerMap(String key, McObfPair value) {
+		MCMAPPINGS.register(key, value);
+	}
 
-		if (map != null && map.exists()) {
-			if (ZipUtil.isZip(map)) {
-				tempMap = MapParser.parseZipMap(map);
-			}
-		}
-
-		if (tempMap != null)
-			MCMAPPINGS = tempMap;
-
-		if (srg != null && srg.exists()) {
-			if (ZipUtil.isZip(srg)) {
-				tempSRG = MapParser.parseZipSRG(MCMAPPINGS, srg);
-			}
-		}
-
-		if (tempSRG != null)
-			SRGMAPPINGS = tempSRG;
-
+	public static void registerSrg(String key, McObfPair value) {
+		SRGMAPPINGS.register(key, value);
 	}
 
 }

@@ -17,41 +17,39 @@ import zdoctor.zcoremod.map.pair.McObfPair;
 import zdoctor.zcoremod.map.pair.McPairDictironary;
 
 public class MapParser {
-	
-	public static McPairDictironary parseZipMap(File file) {
-		McPairDictironary map = new McPairDictironary();
-		ZipUtil.forEach(file, (entry, zis) -> {
-			scanMapInputStream(map, zis);
-		});
 
-		return map.count() <= 0 ? null : map;
+	public static void parseZipMap(File file) {
+		ZipUtil.forEach(file, (entry, zis) -> {
+			scanMapInputStream(zis);
+		});
 	}
-	
-	public static void parseMapFile(McPairDictironary map, File file) {
+
+//	public static void parseMapFile(McPairDictironary map, File file) {
+	public static void parseMapFile(File file) {
 		try {
-			scanMapInputStream(map, new FileInputStream(file));
+			scanMapInputStream(new FileInputStream(file));
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
 	}
 
-	public static McPairDictironary parseMapStream(InputStream mapStream) {
+	public static void parseMapStream(InputStream mapStream) {
 		if (mapStream != null)
 			try {
 				File file = FileUtil.flushToTempFile(StreamUtil.getInputData(mapStream));
-				return parseZipMap(file);
+				parseZipMap(file);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		return null;
 	}
 
-	public static void scanMapInputStream(McPairDictironary map, InputStream inputStream) {
+//	public static void scanMapInputStream(McPairDictironary map, InputStream inputStream) {
+	public static void scanMapInputStream(InputStream inputStream) {
 		Scanner scan = new Scanner(inputStream);
 		while (scan.hasNextLine()) {
 			String line = scan.nextLine();
 			if (line.toLowerCase().startsWith("f") || line.toLowerCase().startsWith("p")) {
-				String[] args = line.split(",");
+				String[] args = parse(line);
 				McObfPair pair = null;
 				if (args.length == 4) {
 					pair = new McObfPair(args[0], args[1], args[2], args[3]);
@@ -62,48 +60,64 @@ public class MapParser {
 				}
 
 				if (pair != null) {
-					map.register(args[0], pair);
+					McMappingDatabase.registerMap(args[0], pair);
 				}
 			}
 		}
 		scan.close();
 	}
-	
-	public static McPairDictironary parseSrgStream(McPairDictironary mappings, InputStream srgStream) {
+
+	public static String[] parse(String line) {
+		char[] array = line.toCharArray();
+		String[] temp = new String[4];
+		int args = 0;
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < array.length; i++) {
+			char c = array[i];
+			if (c == ',' && args <= 2) {
+				temp[args++] = sb.toString();
+				sb = new StringBuilder("");
+			} else
+				sb.append(c);
+		}
+		if (sb.length() > 0)
+			temp[args++] = sb.toString();
+
+		if (args == 3)
+			temp[3] = "";
+
+		return temp;
+	}
+
+	public static void parseSrgStream(McPairDictironary mappings, InputStream srgStream) {
 		if (srgStream != null)
 			try {
 				File file = FileUtil.flushToTempFile(StreamUtil.getInputData(srgStream));
-				return parseZipSRG(mappings, file);
+				parseZipSRG(file);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		return null;
 	}
 
-	public static McPairDictironary parseSrgFile(McPairDictironary mappings, File srgFile) {
-		McPairDictironary srg = new McPairDictironary("Srg-Entries.txt");
+//	public static McPairDictironary parseSrgFile(McPairDictironary mappings, File srgFile) {
+	public static void parseSrgFile(File srgFile) {
 		try {
-			scanSrgInputStream(mappings, srg, new FileInputStream(srgFile));
+			scanSrgInputStream(new FileInputStream(srgFile));
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-		srg.close();
-		return srg;
 	}
 
-	public static McPairDictironary parseZipSRG(McPairDictironary mappings, File file) {
-		McPairDictironary srg = new McPairDictironary();
-
+	public static void parseZipSRG(File file) {
 		ZipUtil.forEach(file, (entry, zis) -> {
 			if (entry.getName().endsWith(".srg")) {
-				scanSrgInputStream(mappings, srg, zis);
+				scanSrgInputStream(zis);
 			}
 		});
-		
-		return srg.count() <= 0 ? null : srg;
 	}
 
-	public static void scanSrgInputStream(McPairDictironary mappings, McPairDictironary srg, InputStream inputStream) {
+//	public static void scanSrgInputStream(McPairDictironary mappings, McPairDictironary srg, InputStream inputStream) {
+	public static void scanSrgInputStream(InputStream inputStream) {
 		Scanner scan = new Scanner(inputStream);
 		while (scan.hasNextLine()) {
 			String line = scan.nextLine();
@@ -111,24 +125,24 @@ public class MapParser {
 			McObfPair pair = null;
 			if (args[0].toLowerCase().startsWith("cl")) {
 				pair = new McObfClass(args[1], args[2]);
-				srg.register(pair.getName(), pair);
+				McMappingDatabase.registerSrg(pair.getName(), pair);
 			} else if (args[0].toLowerCase().startsWith("fd")) {
 				String owner = args[2];
 				owner = owner.substring(0, owner.lastIndexOf('/'));
 
 				String field = args[2];
 				field = field.substring(field.lastIndexOf('/') + 1);
-				McObfPair mcPair = mappings.lookUp(field);
+				McObfPair mcPair = McMappingDatabase.getMapping(field);
 				if (mcPair != null) {
 					String deobfField = args[2].replace(field, mcPair.getDeobf());
 					pair = new McObfField(args[1], deobfField);
-					srg.register(field, pair);
+					McMappingDatabase.registerSrg(field, pair);
 				}
 			} else if (args[0].toLowerCase().startsWith("md")) {
 				String func = args[3];
 				func = func.substring(func.lastIndexOf('/') + 1);
 
-				McObfPair mcPair = mappings.lookUp(func);
+				McObfPair mcPair = McMappingDatabase.getMapping(func);
 				if (mcPair != null) {
 					String deobFunc = args[3].replace(func, mcPair.getDeobf());
 
@@ -136,7 +150,7 @@ public class MapParser {
 					key = key.substring(key.lastIndexOf('/') + 1) + "." + func;
 
 					McObfMethod method = new McObfMethod(args[3], deobFunc, args[1], args[2], args[4]);
-					srg.register(key, method);
+					McMappingDatabase.registerSrg(key, method);
 				}
 			}
 

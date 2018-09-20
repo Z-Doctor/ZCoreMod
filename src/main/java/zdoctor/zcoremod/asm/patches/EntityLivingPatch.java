@@ -6,9 +6,13 @@ import java.util.List;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.FieldNode;
+import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.VarInsnNode;
 
 import zdoctor.zcoremod.asm.util.ASMConstants;
 import zdoctor.zcoremod.asm.util.InsnBuilder;
@@ -22,6 +26,9 @@ public class EntityLivingPatch extends ClassTransformer {
 	private static McObfPair SetHealth = McMappingDatabase.getSRG("EntityLivingBase.func_70606_j");
 	private static McObfPair ReadNbt = McMappingDatabase.getSRG("EntityLivingBase.func_70037_a");
 	private static McObfPair WriteNbt = McMappingDatabase.getSRG("EntityLivingBase.func_70014_b");
+	private static McObfPair UpdatePotionMetadata = McMappingDatabase.getSRG("EntityLivingBase.func_175135_B");
+	private static McObfPair ResetPotionEffectMetadata = McMappingDatabase.getSRG("EntityLivingBase.func_175133_bi");
+	private static McObfPair NotifyDataManagerChange = McMappingDatabase.getSRG("EntityLivingBase.func_184206_a");
 
 	private static McObfPair EntityDataManager = McMappingDatabase.getSRG("EntityDataManager");
 	private static McObfPair DataManager = McMappingDatabase.getSRG("field_70180_af");
@@ -46,6 +53,7 @@ public class EntityLivingPatch extends ClassTransformer {
 
 	@Override
 	public void transform(ClassNode classNode) {
+		System.out.println("Test: " + UpdatePotionMetadata);
 		classNode.interfaces.add(ZPackage + "/tweaks/EntityTweaks$ExtendedEntity");
 		addFields(classNode);
 
@@ -61,6 +69,12 @@ public class EntityLivingPatch extends ClassTransformer {
 				readNBT(method);
 			else if (WriteNbt.matches(method))
 				writeNBT(method);
+			else if (UpdatePotionMetadata.matches(method))
+				updatePotionMetadata(method);
+			else if (ResetPotionEffectMetadata.matches(method))
+				resetPotionEffectMetadata(method);
+			else if (NotifyDataManagerChange.matches(method))
+				notifyDataManagerChange(method);
 		}
 
 		addGetLastHealth(classNode);
@@ -146,7 +160,7 @@ public class EntityLivingPatch extends ClassTransformer {
 
 	public void writeNBT(MethodNode method) {
 		InsnBuilder list = new InsnBuilder();
-		
+
 		list.var(Opcodes.ALOAD);
 		list.dup();
 		list.getField(EntityLivingBase.getClassName(), DataManager.getName(), EntityDataManager.getDescriptor());
@@ -155,6 +169,57 @@ public class EntityLivingPatch extends ClassTransformer {
 		list.checkCast(NBTTagCompound.getClassName());
 		list.invokeStatic(ZPackage + "/tweaks/EntityTweaks", "writeNbt",
 				"(" + EntityLivingBase.getDescriptor() + NBTTagCompound.getDescriptor() + ")V", false);
+
+		list.addTo(method);
+	}
+
+	public void updatePotionMetadata(MethodNode method) {
+		System.out.println("Injecting code into: EntityLivingBase.updatePotionMetadata");
+
+		for (AbstractInsnNode node : method.instructions.toArray()) {
+			if (node instanceof FieldInsnNode) {
+				FieldInsnNode fieldNode = (FieldInsnNode) node;
+				if (fieldNode.desc.equals("Ljava/util/Map;") && node.getNext() instanceof MethodInsnNode) {
+					MethodInsnNode methodNode = (MethodInsnNode) fieldNode.getNext();
+					if (methodNode.name.equals("values") && methodNode.desc.equals("()Ljava/util/Collection;")
+							&& methodNode.getNext() instanceof VarInsnNode) {
+						VarInsnNode collection = (VarInsnNode) methodNode.getNext();
+						int var = collection.var;
+						InsnBuilder list = new InsnBuilder();
+						list.print("Updating Potions");
+						list.var(Opcodes.ALOAD);
+						list.var(Opcodes.ALOAD, var);
+						list.invokeStatic(ZPackage + "/tweaks/EntityTweaks", "updatePotionMetadata",
+								"(" + EntityLivingBase.getDescriptor() + "Ljava/util/Collection;" + ")V", false);
+						list.addAt(method, collection);
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	public void resetPotionEffectMetadata(MethodNode method) {
+		System.out.println("Injecting code into: EntityLivingBase.resetPotionEffectMetadata");
+		
+		InsnBuilder list = new InsnBuilder();
+
+		list.var(Opcodes.ALOAD);
+		list.invokeStatic(ZPackage + "/tweaks/EntityTweaks", "resetPotionEffectMetadata",
+				"(" + EntityLivingBase.getDescriptor() + ")V", false);
+
+		list.addTo(method);
+	}
+
+	public void notifyDataManagerChange(MethodNode method) {
+		System.out.println("Injecting code into: EntityLivingBase.notifyDataManagerChange");
+		
+		InsnBuilder list = new InsnBuilder();
+		list.print("dataChanged");
+		list.var(Opcodes.ALOAD);
+		list.var(Opcodes.ALOAD, 1);
+		list.invokeStatic(ZPackage + "/tweaks/EntityTweaks", "notifyDataManagerChange",
+				"(" + EntityLivingBase.getDescriptor() + DataParameter.getDescriptor() + ")V", false);
 
 		list.addTo(method);
 	}
@@ -195,4 +260,5 @@ public class EntityLivingPatch extends ClassTransformer {
 
 		classNode.methods.add(getLastHealth);
 	}
+
 }
