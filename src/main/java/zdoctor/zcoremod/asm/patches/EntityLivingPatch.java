@@ -20,6 +20,8 @@ public class EntityLivingPatch extends ClassTransformer {
 	private static McObfPair EntityInit = McMappingDatabase.getSRG("EntityLivingBase.func_70088_a");
 	private static McObfPair GetHealth = McMappingDatabase.getSRG("EntityLivingBase.func_110143_aJ");
 	private static McObfPair SetHealth = McMappingDatabase.getSRG("EntityLivingBase.func_70606_j");
+	private static McObfPair ReadNbt = McMappingDatabase.getSRG("EntityLivingBase.func_70037_a");
+	private static McObfPair WriteNbt = McMappingDatabase.getSRG("EntityLivingBase.func_70014_b");
 
 	private static McObfPair EntityDataManager = McMappingDatabase.getSRG("EntityDataManager");
 	private static McObfPair DataManager = McMappingDatabase.getSRG("field_70180_af");
@@ -28,95 +30,169 @@ public class EntityLivingPatch extends ClassTransformer {
 	private static McObfPair Set = McMappingDatabase.getSRG("EntityDataManager.func_187227_b");
 	private static McObfPair Get = McMappingDatabase.getSRG("EntityDataManager.func_187225_a");
 
+	private static McObfPair NBTTagCompound = McMappingDatabase.getSRG("NBTTagCompound");
+
 	private static McObfPair DataSerializer = McMappingDatabase.getSRG("DataSerializer");
 
 	private static McObfPair DataSerializers = McMappingDatabase.getSRG("DataSerializers");
-	private static McObfPair DataSerializers_FLOAT = McMappingDatabase.getSRG("field_187193_c");
+	private static McObfPair FLOAT = McMappingDatabase.getSRG("field_187193_c");
+	private static McObfPair COMPOUND = McMappingDatabase.getSRG("field_192734_n");
 
 	private static McObfPair DataParameter = McMappingDatabase.getSRG("DataParameter");
 
 	public EntityLivingPatch() {
-		super("net.minecraft.entity.EntityLivingBase");
+		super(EntityLivingBase.getKey());
 	}
 
 	@Override
 	public void transform(ClassNode classNode) {
+		classNode.interfaces.add(ZPackage + "/tweaks/EntityTweaks$ExtendedEntity");
 		addFields(classNode);
-	
+
 		for (MethodNode method : classNode.methods) {
+//			System.out.println("Method: " + method.name);	
 			if (ASMConstants.STATIC_INIT.matches(method.name))
 				clinit(method);
-			if (EntityInit.matches(method))
+			else if (EntityInit.matches(method))
 				entityInit(method);
 			else if (SetHealth.matches(method))
 				setHealth(method);
+			else if (ReadNbt.matches(method))
+				readNBT(method);
+			else if (WriteNbt.matches(method))
+				writeNBT(method);
 		}
-	
+
+		addGetLastHealth(classNode);
+		addSetLastHealth(classNode);
 	}
 
 	public void addFields(ClassNode classNode) {
-		System.out.println("Added Field: LAST_HEALTH");
-
 		List<FieldNode> fields = classNode.fields;
+
 		String sig = "L" + DataParameter.getClassName() + "<Ljava/lang/Float;>;";
 		FieldNode lastHealthField = new FieldNode(ASMConstants.PSF, "LAST_HEALTH", DataParameter.getDescriptor(), sig,
 				null);
 		fields.add(lastHealthField);
+
+		sig = "L" + DataParameter.getClassName() + "<" + NBTTagCompound.getDescriptor() + ">;";
+		FieldNode potionWatcher = new FieldNode(ASMConstants.PSF, "POTION_WATCHER", DataParameter.getDescriptor(), sig,
+				null);
+		fields.add(potionWatcher);
 	}
 
 	public void clinit(MethodNode method) {
-		System.out.println("Initialized: LAST_HEALTH");
+//		System.out.println("Initialized: LAST_HEALTH");
+
 		InsnBuilder list = new InsnBuilder();
 		// Add a DataParameter named LAST_HEALTH to Entity
 		list.ldc(Type.getType(EntityLivingBase.getDescriptor()));
-		list.getStatic(DataSerializers.getClassName(), DataSerializers_FLOAT.getName(), DataSerializer.getDescriptor());
+		list.getStatic(DataSerializers.getClassName(), FLOAT.getName(), DataSerializer.getDescriptor());
 		list.invokeStatic(EntityDataManager.getClassName(), CreateKey.getName(), CreateKey.getDescriptor(), false);
+
 		list.dup();
 		list.putStatic(EntityLivingBase.getClassName(), "LAST_HEALTH", DataParameter.getDescriptor());
 		list.putStatic(ZPackage + "/tweaks/EntityTweaks", "LAST_HEALTH", DataParameter.getDescriptor());
+
+		list.ldc(Type.getType(EntityLivingBase.getDescriptor()));
+		list.getStatic(DataSerializers.getClassName(), COMPOUND.getName(), DataSerializer.getDescriptor());
+		list.invokeStatic(EntityDataManager.getClassName(), CreateKey.getName(), CreateKey.getDescriptor(), false);
+
+		list.dup();
+		list.putStatic(EntityLivingBase.getClassName(), "POTION_WATCHER", DataParameter.getDescriptor());
+		list.putStatic(ZPackage + "/tweaks/EntityTweaks", "POTION_WATCHER", DataParameter.getDescriptor());
+
 		list.addToEnd(method);
 	}
 
 	public void entityInit(MethodNode method) {
-		System.out.println("Injected in EntityLivingBase.entityInit: EntityTweaks.entityInit");
+//		System.out.println("Injected in EntityLivingBase.entityInit: EntityTweaks.entityInit");
+
 		InsnBuilder list = new InsnBuilder();
-		list.print("Sending to: Entity Tweaks");
-		list.var(Opcodes.ALOAD, 0);
-		list.dup();
+		list.var(Opcodes.ALOAD);
 		list.getField(EntityLivingBase.getClassName(), DataManager.getName(), EntityDataManager.getDescriptor());
 		list.invokeStatic(ZPackage + "/tweaks/EntityTweaks", "entityInit",
-				"(" + EntityLivingBase.getDescriptor() + EntityDataManager.getDescriptor() + ")V", false);
+				"(" + EntityDataManager.getDescriptor() + ")V", false);
 		list.addToEnd(method);
 	}
 
 	public void setHealth(MethodNode method) {
-		System.out.println("Injecting code into: EntityLivingBase.setHealth");
+//		System.out.println("Injecting code into: EntityLivingBase.setHealth");
 
 		InsnBuilder list = new InsnBuilder();
-		// Retrieve LAST_HEALTH
-		list.var(Opcodes.ALOAD, 0);
-		list.getField(EntityLivingBase.getClassName(), DataManager.getName(), EntityDataManager.getDescriptor());
-		list.getStatic(EntityLivingBase.getClassName(), "LAST_HEALTH", DataParameter.getDescriptor());
-
 		// Get Current Health
-		list.var(Opcodes.ALOAD, 0);
+		list.var(Opcodes.ALOAD);
+		list.dup();
 		list.invokeVirtual(EntityLivingBase.getClassName(), GetHealth.getName(), GetHealth.getDescriptor(), false);
-
-		// Set Last Health
-		list.valueOfFloat();
-		list.invokeVirtual(EntityDataManager.getClassName(), Set.getName(), Set.getDescriptor(), false);
+		list.invokeVirtual(EntityLivingBase.getClassName(), "setLastHealth", "(F)V", false);
 
 		list.addToStart(method);
 	}
 
 	public void readNBT(MethodNode method) {
-		// TODO Auto-generated method stub
+		InsnBuilder list = new InsnBuilder();
 
+		list.var(Opcodes.ALOAD);
+		list.dup();
+		list.getField(EntityLivingBase.getClassName(), DataManager.getName(), EntityDataManager.getDescriptor());
+		list.getStatic(EntityLivingBase.getClassName(), "POTION_WATCHER", DataParameter.getDescriptor());
+		list.invokeVirtual(EntityDataManager.getClassName(), Get.getName(), Get.getDescriptor(), false);
+		list.checkCast(NBTTagCompound.getClassName());
+		list.invokeStatic(ZPackage + "/tweaks/EntityTweaks", "readNbt",
+				"(" + EntityLivingBase.getDescriptor() + NBTTagCompound.getDescriptor() + ")V", false);
+
+		list.addTo(method);
 	}
 
 	public void writeNBT(MethodNode method) {
-		// TODO Auto-generated method stub
+		InsnBuilder list = new InsnBuilder();
+		
+		list.var(Opcodes.ALOAD);
+		list.dup();
+		list.getField(EntityLivingBase.getClassName(), DataManager.getName(), EntityDataManager.getDescriptor());
+		list.getStatic(EntityLivingBase.getClassName(), "POTION_WATCHER", DataParameter.getDescriptor());
+		list.invokeVirtual(EntityDataManager.getClassName(), Get.getName(), Get.getDescriptor(), false);
+		list.checkCast(NBTTagCompound.getClassName());
+		list.invokeStatic(ZPackage + "/tweaks/EntityTweaks", "writeNbt",
+				"(" + EntityLivingBase.getDescriptor() + NBTTagCompound.getDescriptor() + ")V", false);
 
+		list.addTo(method);
 	}
 
+	public void addGetLastHealth(ClassNode classNode) {
+//		System.out.println("Added Method: addGetLastHealth");
+
+		MethodNode getLastHealth = new MethodNode(Opcodes.ACC_PUBLIC, "getLastHealth", "()F", null, null);
+		InsnBuilder list = new InsnBuilder();
+
+		list.var(Opcodes.ALOAD);
+		list.getField(EntityLivingBase.getClassName(), DataManager.getName(), EntityDataManager.getDescriptor());
+		list.getStatic(EntityLivingBase.getClassName(), "LAST_HEALTH", DataParameter.getDescriptor());
+		list.invokeVirtual(EntityDataManager.getClassName(), Get.getName(), Get.getDescriptor(), false);
+		list.checkCastFloat();
+		list.floatValue();
+
+		list.insn(Opcodes.FRETURN);
+		list.addTo(getLastHealth);
+
+		classNode.methods.add(getLastHealth);
+	}
+
+	public void addSetLastHealth(ClassNode classNode) {
+		System.out.println("Added Method: setLastHealth");
+
+		MethodNode getLastHealth = new MethodNode(Opcodes.ACC_PUBLIC, "setLastHealth", "(F)V", null, null);
+		InsnBuilder list = new InsnBuilder();
+
+		list.var(Opcodes.ALOAD);
+		list.getField(EntityLivingBase.getClassName(), DataManager.getName(), EntityDataManager.getDescriptor());
+		list.getStatic(EntityLivingBase.getClassName(), "LAST_HEALTH", DataParameter.getDescriptor());
+		list.var(Opcodes.FLOAD, 1);
+		list.valueOfFloat();
+		list.invokeVirtual(EntityDataManager.getClassName(), Set.getName(), Set.getDescriptor(), false);
+		list.end();
+		list.addTo(getLastHealth);
+
+		classNode.methods.add(getLastHealth);
+	}
 }

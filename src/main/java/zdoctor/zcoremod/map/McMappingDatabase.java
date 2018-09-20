@@ -1,15 +1,15 @@
 package zdoctor.zcoremod.map;
 
 import java.io.File;
-import java.io.InputStream;
 
-import zdoctor.commons.io.util.StreamUtil;
 import zdoctor.commons.io.util.ZipUtil;
-import zdoctor.zcoremod.asm.util.ASMConstants;
+import zdoctor.zcoremod.Config;
+import zdoctor.zcoremod.CoreModFMLLoadPlugin;
 import zdoctor.zcoremod.map.pair.McObfPair;
 import zdoctor.zcoremod.map.pair.McPairDictironary;
 
 public class McMappingDatabase {
+
 	protected static McPairDictironary MCMAPPINGS;
 	protected static McPairDictironary SRGMAPPINGS;
 
@@ -22,19 +22,41 @@ public class McMappingDatabase {
 	}
 
 	public static void loadDefaultMappings() {
-		InputStream mapStream = StreamUtil.getResourceAsStream(McMappingDatabase.class,
-				ASMConstants.ZPackage + "/mappings/mcp_snapshot-20180814-1.12.zip");
-		McPairDictironary map = MapParser.parseMapStream(mapStream);
-		if (map != null)
-			MCMAPPINGS = map;
+		McPairDictironary map = new McPairDictironary();
+		File mapDir = getMapDir();
+		
+		for (File file : mapDir.listFiles()) {
+			if (file.isFile() && file.getName().endsWith(".csv")) {
+				MapParser.parseMapFile(map, file);
+			}
+		}
 
-		InputStream srgStream = StreamUtil.getResourceAsStream(McMappingDatabase.class,
-				ASMConstants.ZPackage + "/mappings/mcp-1.12-srg.zip");
-		McPairDictironary srg = MapParser.parseMapStream(MCMAPPINGS, srgStream);
-		if (srg != null)
+		if (map != null && map.count() > 0)
+			MCMAPPINGS = map;
+		
+		File notchSrg = getSrgFile();
+
+		McPairDictironary srg = MapParser.parseSrgFile(MCMAPPINGS, notchSrg);
+		if (srg != null && srg.count() > 0)
 			SRGMAPPINGS = srg;
 
-		assert (MCMAPPINGS != null && SRGMAPPINGS != null);
+	}
+
+	public static File getMapDir() {
+		File mapDir = new File(Config.PATH);
+//		if (!CoreModFMLLoadPlugin.isDeobfuscationEnabled)
+//			return new File(System.getProperty("net.minecraftforge.gradle.GradleStart.csvDir"));
+//		else
+		return mapDir;
+	}
+
+	public static File getSrgFile() {
+		
+		File srgFile = new File(Config.SRG);
+//		if (!CoreModFMLLoadPlugin.isDeobfuscationEnabled)
+//			return new File(System.getProperty("net.minecraftforge.gradle.GradleStart.srg.notch-srg"));
+//		else
+		return srgFile;
 	}
 
 	public static void loadMappings(File map, File srg) {

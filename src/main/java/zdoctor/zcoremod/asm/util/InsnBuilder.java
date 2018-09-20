@@ -1,6 +1,7 @@
 package zdoctor.zcoremod.asm.util;
 
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.InsnNode;
@@ -183,19 +184,19 @@ public class InsnBuilder extends InsnList {
 		// Assuming size is on the top of the stack
 		type(Opcodes.ANEWARRAY, "java/lang/Object");
 	}
-	
+
 	public void newObjectArray(int size) {
 		push(size);
 		newObjectArray();
 	}
-	
+
 	public void addObject(int index) {
 		// array
 		// value
-		
+
 		// Assuming an array ref is on the top of the stack
 		swap();
-		
+
 		// value
 		// array
 		dupx1();
@@ -209,7 +210,7 @@ public class InsnBuilder extends InsnList {
 	}
 
 	public void push(int num) {
-		if(num < 0)
+		if (num < 0)
 			ldc(new Integer(num));
 		else if (num < 128)
 			intInsn(Opcodes.BIPUSH, num);
@@ -221,6 +222,14 @@ public class InsnBuilder extends InsnList {
 
 	public void push(long num) {
 		ldc(new Long(num));
+	}
+
+	public void push(float num) {
+		ldc(num);
+	}
+
+	public void push(double num) {
+		ldc(num);
 	}
 
 	public void nop() {
@@ -268,6 +277,12 @@ public class InsnBuilder extends InsnList {
 		pop2();
 	}
 
+	public LabelNode newLabel() {
+		LabelNode label = new LabelNode();
+		add(label);
+		return label;
+	}
+
 	public void addToEnd(MethodNode method) {
 		method.instructions.insert(this);
 	}
@@ -276,18 +291,16 @@ public class InsnBuilder extends InsnList {
 		method.instructions.insert(method.instructions.getFirst(), this);
 	}
 
-	public void addBeforeEnd(MethodNode method) {
-		method.instructions.insertBefore(method.instructions.getLast().getPrevious(), this);
-	}
-
 	public void addTo(MethodNode method) {
-		method.instructions.add(this);
+		method.instructions.insert(this);
 	}
 
-	public LabelNode newLabel() {
-		LabelNode label = new LabelNode();
-		add(label);
-		return label;
+	public void addAt(MethodNode method, AbstractInsnNode location) {
+		method.instructions.insert(location, this);
+	}
+
+	public void addBefore(MethodNode method, AbstractInsnNode location) {
+		method.instructions.insertBefore(location, this);
 	}
 
 	public void end() {
@@ -330,23 +343,72 @@ public class InsnBuilder extends InsnList {
 		type(Opcodes.CHECKCAST, "java/lang/Double");
 	}
 
+	/**
+	 * Converts the int on the stop of the stack to a {@link Integer}
+	 */
 	public void valueOfInt() {
 		invokeStatic("java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", false);
 	}
 
+	/**
+	 * Converts the long on the stop of the stack to a {@link Long}
+	 */
 	public void valueOfLong() {
 		invokeStatic("java/lang/Long", "valueOf", "(J)Ljava/lang/Long;", false);
 	}
 
+	/**
+	 * Converts the float on the stop of the stack to a {@link Float}
+	 */
 	public void valueOfFloat() {
-		float f = 10.0f;
-		float f2 = 10.0f;
-		float f3 = f + f2;
 		invokeStatic("java/lang/Float", "valueOf", "(F)Ljava/lang/Float;", false);
 	}
 
+	/**
+	 * Converts the double on the stop of the stack to a {@link Double}
+	 */
 	public void valueOfDouble() {
 		invokeStatic("java/lang/Double", "valueOf", "(D)Ljava/lang/Double;", false);
+	}
+
+	/**
+	 * Converts the int on the stop of the stack to a {@link Integer}
+	 * 
+	 * @param num Pushes the int to the stack
+	 */
+	public void valueOfInt(int num) {
+		push(num);
+		valueOfInt();
+	}
+
+	/**
+	 * Converts the long on the stop of the stack to a {@link Long}
+	 * 
+	 * @param num Pushes the long to the stack
+	 */
+	public void valueOfLong(long num) {
+		push(num);
+		valueOfLong();
+	}
+
+	/**
+	 * Converts the float on the top of the stack to a {@link Float}
+	 * 
+	 * @param num Pushes the float to the stack
+	 */
+	public void valueOfFloat(float num) {
+		push(num);
+		valueOfFloat();
+	}
+
+	/**
+	 * Converts the double on the stop of the stack to a {@link Double}
+	 * 
+	 * @param num Pushes the double to the stack
+	 */
+	public void valueOfDouble(double num) {
+		push(num);
+		valueOfDouble();
 	}
 
 	/**
@@ -359,17 +421,31 @@ public class InsnBuilder extends InsnList {
 		invokeVirtual("java/io/PrintStream", "println", "(Ljava/lang/Object;)V", false);
 	}
 
+	/**
+	 * Prints the current String on the stack
+	 * 
+	 * @param text Pushes the String to the stack
+	 */
 	public void print(String text) {
 		ldc(text);
 		print();
 	}
 
+	/**
+	 * Prints the current format String and the Object array on the stack
+	 */
 	public void printf() {
-		// Assuming the Object array is on the top of stack followed by the format string
 		invokeStatic("java/lang/String", "format", "(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;", false);
 		print();
 	}
 
+	/**
+	 * Prints the current format String and the Object array on the stack
+	 * 
+	 * @param format The format String to push to the stack
+	 * @param insn   Instructions that will load the objects to the stack to be
+	 *               sorted
+	 */
 	public void printf(String format, InsnBuilder... insn) {
 		ldc(format);
 		newObjectArray(insn.length);

@@ -33,7 +33,7 @@ public class McObfPair {
 	}
 
 	public String getName() {
-		if (CoreModFMLLoadPlugin.isObf)
+		if (CoreModFMLLoadPlugin.isObfuscated)
 			return obf;
 		else
 			return deobf;
@@ -81,6 +81,11 @@ public class McObfPair {
 	
 	public boolean matches(FieldInsnNode field) {
 		return false;
+	}
+
+	
+	public String getKey() {
+		return getClassName().replaceAll("/", ".");
 	}
 	
 }

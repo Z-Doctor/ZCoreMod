@@ -22,6 +22,11 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>20171003</name>
+			<type>2</type>
+			<location>C:/Users/Reuben Renquist/.gradle/caches/minecraft/de/oceanlabs/mcp/mcp_snapshot/20171003</location>
+		</link>
+		<link>
 			<name>EasyJSON</name>
 			<type>2</type>
 			<location>C:/Users/Reuben Renquist/git/EasyJSON/src</location>

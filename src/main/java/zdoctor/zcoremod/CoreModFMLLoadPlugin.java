@@ -12,7 +12,7 @@ import zdoctor.zcoremod.map.McMappingDatabase;
 @IFMLLoadingPlugin.Name("ZCoreMod.Plugin")
 public class CoreModFMLLoadPlugin implements IFMLLoadingPlugin, IFMLCallHook {
 
-	public static Boolean isObf = false;
+	public static Boolean isObfuscated = false;
 
 	@Override
 	public Void call() throws Exception {
@@ -37,9 +37,7 @@ public class CoreModFMLLoadPlugin implements IFMLLoadingPlugin, IFMLCallHook {
 
 	@Override
 	public void injectData(Map<String, Object> data) {
-		isObf = (Boolean) data.get("runtimeDeobfuscationEnabled");
-
-		System.out.println("Loading Default Mappings");
+		isObfuscated = (Boolean) data.get("runtimeDeobfuscationEnabled");
 		McMappingDatabase.loadDefaultMappings();
 	}
 

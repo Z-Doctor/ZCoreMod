@@ -6,29 +6,36 @@ import org.objectweb.asm.tree.MethodNode;
 import zdoctor.zcoremod.CoreModFMLLoadPlugin;
 
 public class McObfMethod extends McObfPair {
-	private String ownerObf;
+	protected String ownerObf;
 	protected String ownerDeobf;
-	
-	public McObfMethod(String ownerObf, String ownerDeobf, String srgFunc, String descObf, String descDeobf) {
+	protected String functionNameObf;
+
+	public McObfMethod(String ownerObf, String ownerDeobf, String functionNameObf, String descObf, String descDeobf) {
 		super(descObf, descDeobf);
-		
+
 		this.ownerObf = ownerObf;
 		this.ownerDeobf = ownerDeobf;
+		
+		this.functionNameObf = functionNameObf.substring(functionNameObf.lastIndexOf('/') + 1);
 	}
 
 	@Override
 	public String getName() {
-		return getClassName().substring(getClassName().lastIndexOf('/') + 1);
+		if (CoreModFMLLoadPlugin.isObfuscated)
+			return functionNameObf;
+		else
+			return ownerDeobf.substring(ownerDeobf.lastIndexOf('/') + 1);
+		
 	}
-	
+
 	@Override
 	public String getClassName() {
-		if (CoreModFMLLoadPlugin.isObf)
+		if (CoreModFMLLoadPlugin.isObfuscated)
 			return ownerObf;
 		else
 			return ownerDeobf;
 	}
-	
+
 	@Override
 	public String getOwner() {
 		return getClassName().substring(0, getClassName().lastIndexOf('/'));
@@ -36,7 +43,7 @@ public class McObfMethod extends McObfPair {
 
 	@Override
 	public String getDescriptor() {
-		if (CoreModFMLLoadPlugin.isObf)
+		if (CoreModFMLLoadPlugin.isObfuscated)
 			return obf;
 		else
 			return deobf;
@@ -46,9 +53,14 @@ public class McObfMethod extends McObfPair {
 	public boolean matches(MethodNode method) {
 		return getName().equals(method.name) && getDescriptor().equals(method.desc);
 	}
-	
+
 	@Override
 	public boolean matches(MethodInsnNode method) {
 		return getName().equals(method.name) && getDescriptor().equals(method.desc);
+	}
+	
+	@Override
+	public String toString() {
+		return super.toString();
 	}
 }

@@ -19,7 +19,7 @@ public class McObfClass extends McObfPair {
 
 	@Override
 	public String getClassName() {
-		if (CoreModFMLLoadPlugin.isObf)
+		if (CoreModFMLLoadPlugin.isObfuscated)
 			return obf;
 		else
 			return deobf;

@@ -21,12 +21,15 @@ public class McObfField extends McObfPair {
 
 	@Override
 	public String getName() {
-		return field;
+		if (CoreModFMLLoadPlugin.isObfuscated)
+			return obf.substring(obf.lastIndexOf('/') + 1);
+		else
+			return deobf.substring(deobf.lastIndexOf('/') + 1);
 	}
 	
 	@Override
 	public String getOwner() {
-		if (CoreModFMLLoadPlugin.isObf)
+		if (CoreModFMLLoadPlugin.isObfuscated)
 			return ownerObf;
 		else
 			return ownerDeobf;
@@ -34,7 +37,10 @@ public class McObfField extends McObfPair {
 	
 	@Override
 	public String getDescriptor() {
-		return getOwner().substring(getOwner().lastIndexOf('/') + 1);
+		if (CoreModFMLLoadPlugin.isObfuscated)
+			return obf;
+		else
+			return deobf;
 	}
 
 	@Override

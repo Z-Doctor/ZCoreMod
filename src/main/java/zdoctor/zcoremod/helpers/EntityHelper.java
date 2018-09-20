@@ -6,16 +6,13 @@ import net.minecraft.entity.EntityLivingBase;
 import zdoctor.zcoremod.tweaks.EntityTweaks;
 
 public class EntityHelper {
-	
-	static {
-		
-	}
 
 	public static float getLastHealth(@Nonnull EntityLivingBase entity) {
-		return 0f;
-		
-//		assert(EntityTweaks.LAST_HEALTH != null);
-//		
-//		return entity.getDataManager().get(EntityTweaks.LAST_HEALTH);
+		return ((EntityTweaks.ExtendedEntity) entity).getLastHealth();
 	}
+
+	public static void setLastHealth(@Nonnull EntityLivingBase entity, float lastHealth) {
+		((EntityTweaks.ExtendedEntity) entity).setLastHealth(lastHealth);
+	}
+
 }
