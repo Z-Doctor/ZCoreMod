@@ -144,15 +144,6 @@ public class EntityLivingPatch extends ClassTransformer {
 				"(" + EntityLivingBase.getDescriptor() + NBTTagCompound.getDescriptor() + ")V", false);
 		list.addToEnd(method);
 
-//		list.var(Opcodes.ALOAD);
-//		list.dup();
-//		list.getField(EntityLivingBase.getClassName(), DataManager.getName(), EntityDataManager.getDescriptor());
-//		list.getStatic(EntityLivingBase.getClassName(), "POTION_WATCHER", DataParameter.getDescriptor());
-//		list.invokeVirtual(EntityDataManager.getClassName(), Get.getName(), Get.getDescriptor(), false);
-//		list.checkCast(NBTTagCompound.getClassName());
-//		list.invokeStatic(ZPackage + "/tweaks/EntityTweaks", "writeNbt",
-//				"(" + EntityLivingBase.getDescriptor() + NBTTagCompound.getDescriptor() + ")V", false);
-//		list.addTo(method);
 	}
 
 	public void updatePotionMetadata(MethodNode method) {
