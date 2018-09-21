@@ -15,7 +15,12 @@ public class McObfMethod extends McObfPair {
 
 		this.ownerObf = ownerObf;
 		this.ownerDeobf = ownerDeobf;
-		
+
+		if (CoreModFMLLoadPlugin.isObfuscated)
+			addDescriptor(descObf);
+		else
+			addDescriptor(descDeobf);
+
 		this.functionNameObf = functionNameObf.substring(functionNameObf.lastIndexOf('/') + 1);
 	}
 
@@ -25,7 +30,7 @@ public class McObfMethod extends McObfPair {
 			return functionNameObf;
 		else
 			return ownerDeobf.substring(ownerDeobf.lastIndexOf('/') + 1);
-		
+
 	}
 
 	@Override
@@ -58,9 +63,14 @@ public class McObfMethod extends McObfPair {
 	public boolean matches(MethodInsnNode method) {
 		return getName().equals(method.name) && getDescriptor().equals(method.desc);
 	}
-	
+
 	@Override
 	public String toString() {
 		return super.toString();
+	}
+
+	@Override
+	public String getVariableName() {
+		return ownerDeobf.substring(ownerDeobf.lastIndexOf('/') + 1);
 	}
 }

@@ -24,18 +24,33 @@ public class FileUtil {
 	}
 
 	public static File createFile(String filePath) {
+		File file;
 		if (filePath.contains("/")) {
+
 			String path = filePath.replaceFirst(PATH_REGEX, "$1");
 			String fileName = filePath.replaceFirst(FILENAME_REGEX, "");
 			File folder = new File(path);
+			if (folder.exists() && !folder.isDirectory()) {
+				System.out.println("Unable to make folder with existing file");
+				return null;
+			}
 			folder.mkdirs();
-			return new File(folder, fileName);
+			file = new File(folder, fileName);
 		} else
-			return new File(filePath);
+			file = new File(filePath);
+
+		if (!file.exists())
+			try {
+				file.createNewFile();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+		return file;
 	}
 
 	public static File createFile(String parentFile, String filePath) {
-		return createFile(createFile(parentFile), filePath);
+		return createFile(parentFile + "/" + filePath);
 	}
 
 	public static File createFile(File parentFile, String filePath) {

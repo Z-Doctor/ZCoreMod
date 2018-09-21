@@ -24,9 +24,10 @@ public class McObfClass extends McObfPair {
 		else
 			return deobf;
 	}
-	
+
 	@Override
 	public String getDescriptor() {
 		return "L" + getClassName() + ";";
 	}
+
 }

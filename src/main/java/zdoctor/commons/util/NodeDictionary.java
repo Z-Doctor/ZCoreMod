@@ -2,6 +2,7 @@ package zdoctor.commons.util;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public abstract class NodeDictionary<K, V> {
@@ -267,4 +268,7 @@ public abstract class NodeDictionary<K, V> {
 
 	}
 
+	public void forEach(BiConsumer<? super K[], ? super V> action) {
+		database.forEach(action);
+	}
 }

@@ -439,6 +439,18 @@ public class InsnBuilder extends InsnList {
 		print();
 	}
 
+	public void printf(String format, int objectsInStack) {
+		newObjectArray(objectsInStack);
+		for (int i = 0; i < objectsInStack; i++) {
+			dupx1();
+			swap();
+			addObject(i);
+		}
+		ldc(format);
+		swap();
+		printf();
+	}
+
 	/**
 	 * Prints the current format String and the Object array on the stack
 	 * 

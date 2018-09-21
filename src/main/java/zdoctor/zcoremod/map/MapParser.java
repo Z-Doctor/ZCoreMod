@@ -14,7 +14,6 @@ import zdoctor.zcoremod.map.pair.McObfClass;
 import zdoctor.zcoremod.map.pair.McObfField;
 import zdoctor.zcoremod.map.pair.McObfMethod;
 import zdoctor.zcoremod.map.pair.McObfPair;
-import zdoctor.zcoremod.map.pair.McPairDictironary;
 
 public class MapParser {
 
@@ -24,7 +23,6 @@ public class MapParser {
 		});
 	}
 
-//	public static void parseMapFile(McPairDictironary map, File file) {
 	public static void parseMapFile(File file) {
 		try {
 			scanMapInputStream(new FileInputStream(file));
@@ -43,7 +41,6 @@ public class MapParser {
 			}
 	}
 
-//	public static void scanMapInputStream(McPairDictironary map, InputStream inputStream) {
 	public static void scanMapInputStream(InputStream inputStream) {
 		Scanner scan = new Scanner(inputStream);
 		while (scan.hasNextLine()) {
@@ -99,7 +96,6 @@ public class MapParser {
 			}
 	}
 
-//	public static McPairDictironary parseSrgFile(McPairDictironary mappings, File srgFile) {
 	public static void parseSrgFile(File srgFile) {
 		try {
 			scanSrgInputStream(new FileInputStream(srgFile));
@@ -116,12 +112,18 @@ public class MapParser {
 		});
 	}
 
-//	public static void scanSrgInputStream(McPairDictironary mappings, McPairDictironary srg, InputStream inputStream) {
 	public static void scanSrgInputStream(InputStream inputStream) {
 		Scanner scan = new Scanner(inputStream);
-		while (scan.hasNextLine()) {
+		while (scan.hasNextLine() || scan.hasNext()) {
 			String line = scan.nextLine();
+			if (line.equals(""))
+				continue;
+
 			String[] args = line.split(" ");
+
+			if (args.length == 0)
+				continue;
+
 			McObfPair pair = null;
 			if (args[0].toLowerCase().startsWith("cl")) {
 				pair = new McObfClass(args[1], args[2]);
@@ -152,6 +154,8 @@ public class MapParser {
 					McObfMethod method = new McObfMethod(args[3], deobFunc, args[1], args[2], args[4]);
 					McMappingDatabase.registerSrg(key, method);
 				}
+			} else {
+				System.out.println("Skipped: " + line);
 			}
 
 		}

@@ -4,7 +4,6 @@ import java.io.File;
 
 import zdoctor.zcoremod.Config;
 import zdoctor.zcoremod.map.pair.McObfPair;
-import zdoctor.zcoremod.map.pair.McPairDictironary;
 
 public class McMappingDatabase {
 
@@ -21,7 +20,6 @@ public class McMappingDatabase {
 
 	public static void loadDefaultMappings() {
 		MCMAPPINGS = new McPairDictironary();
-//		MCMAPPINGS = new McPairDictironary("Mappings.txt");
 		File mapDir = getMapDir();
 
 		for (File file : mapDir.listFiles()) {
@@ -30,10 +28,10 @@ public class McMappingDatabase {
 			}
 		}
 
-		SRGMAPPINGS = new McPairDictironary("Srg-Entries.txt");
+		SRGMAPPINGS = new McPairDictironary();
 		File notchSrg = getSrgFile();
 		MapParser.parseSrgFile(notchSrg);
-
+		SRGMAPPINGS.generateEntries();
 	}
 
 	public static File getMapDir() {
@@ -54,7 +52,10 @@ public class McMappingDatabase {
 	}
 
 	public static void registerSrg(String key, McObfPair value) {
-		SRGMAPPINGS.register(key, value);
+		if (SRGMAPPINGS.hasKey(key))
+			SRGMAPPINGS.lookUp(key).addDescriptor(value.getDescriptor());
+		else
+			SRGMAPPINGS.register(key, value);
 	}
 
 }

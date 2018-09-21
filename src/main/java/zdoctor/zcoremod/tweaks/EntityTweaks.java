@@ -3,13 +3,13 @@ package zdoctor.zcoremod.tweaks;
 import java.util.Collection;
 
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.network.datasync.DataParameter;
 import net.minecraft.network.datasync.EntityDataManager;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.world.World;
+import zdoctor.zcoremod.helpers.EntityHelper;
 
 public class EntityTweaks {
 	public static DataParameter<Float> LAST_HEALTH;
@@ -22,12 +22,13 @@ public class EntityTweaks {
 
 	public static void readNbt(EntityLivingBase entity, NBTTagCompound compound) {
 		if (compound.hasKey("LastHealth", 99)) {
-			((EntityTweaks.ExtendedEntity) entity).setLastHealth(compound.getFloat("LastHealth"));
+			EntityHelper.setLastHealth(entity, compound.getFloat("LastHealth"));
 		}
+
 	}
 
 	public static void writeNbt(EntityLivingBase entity, NBTTagCompound compound) {
-		compound.setFloat("LastHealth", ((EntityTweaks.ExtendedEntity) entity).getLastHealth());
+		compound.setFloat("LastHealth", EntityHelper.getLastHealth(entity));
 	}
 
 	public static void updatePotionMetadata(EntityLivingBase entity, Collection<PotionEffect> collection) {

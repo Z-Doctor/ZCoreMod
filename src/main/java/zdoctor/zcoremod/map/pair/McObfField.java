@@ -12,9 +12,9 @@ public class McObfField extends McObfPair {
 
 	public McObfField(String obfField, String deobfField) {
 		super(obfField, deobfField);
-		
+
 		this.field = deobfField.substring(deobfField.lastIndexOf('/') + 1);
-		
+
 		this.ownerObf = obfField.substring(0, obfField.lastIndexOf('/'));
 		this.ownerDeobf = deobfField.substring(0, deobfField.lastIndexOf('/'));
 	}
@@ -26,7 +26,7 @@ public class McObfField extends McObfPair {
 		else
 			return deobf.substring(deobf.lastIndexOf('/') + 1);
 	}
-	
+
 	@Override
 	public String getOwner() {
 		if (CoreModFMLLoadPlugin.isObfuscated)
@@ -34,7 +34,7 @@ public class McObfField extends McObfPair {
 		else
 			return ownerDeobf;
 	}
-	
+
 	@Override
 	public String getDescriptor() {
 		if (CoreModFMLLoadPlugin.isObfuscated)
@@ -47,9 +47,14 @@ public class McObfField extends McObfPair {
 	public boolean matches(FieldNode field) {
 		return getName().equals(field.name);
 	}
-	
+
 	@Override
 	public boolean matches(FieldInsnNode field) {
 		return getName().equals(field.name);
+	}
+
+	@Override
+	public String getVariableName() {
+		return deobf.substring(deobf.lastIndexOf('/') + 1);
 	}
 }
